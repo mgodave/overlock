@@ -1,0 +1,86 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.boundary</groupId>
+  <artifactId>overlock</artifactId>
+  <packaging>jar</packaging>
+  <version>0.5.1</version>
+  <name>overlock</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <scala.version>2.9.1</scala.version>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>scala-tools.org</id>
+      <name>Scala-tools Maven2 Repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+    </repository>
+    <repository>
+      <id>codahale.com</id>
+      <name>Coda Hale's Repo</name>
+      <url>http://repo.codahale.com/</url>
+    </repository>
+    <repository>
+      <id>boundary.com</id>
+      <name>Boundary's Public Repo</name>
+      <url>http://maven.boundary.com/artifactory/repo</url>
+    </repository>
+  </repositories>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.scala-tools.testing</groupId>
+      <artifactId>specs_${scala.version}</artifactId>
+      <version>1.6.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.yammer.metrics</groupId>
+      <artifactId>metrics-scala_${scala.version}</artifactId>
+      <version>2.0.0-BETA18-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.boundary</groupId>
+      <artifactId>high-scale-lib</artifactId>
+      <version>1.0.3</version>
+    </dependency>
+    <dependency>
+      <groupId>com.codahale</groupId>
+      <artifactId>logula_${scala.version}</artifactId>
+      <version>2.1.4-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>scala-tools.org</id>
+      <name>Scala-tools Maven2 Repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <build>
+    <sourceDirectory>src/main/scala</sourceDirectory>
+    <testSourceDirectory>src/test/scala</testSourceDirectory>
+
+    <plugins>
+      <plugin>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+        <version>2.15.2</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+
