@@ -9,4 +9,10 @@ class InstrumentedLock extends Lock with Instrumented {
   val readLockGuage = metrics.gauge("read lock count") { lock.getReadLockCount }
   val writeHoldGuage = metrics.gauge("write hold count") { lock.getWriteHoldCount }
 
+  val readLockAquireMeter = metrics.meter("read lock aquisition rate", "aquisitions")
+  val writeLockAquireMeter = metrics.meter("write lock aquisition rate", "aquisitions")
+
+  val readLockHoldTimer = metrics.timer("read lock hold time")
+  val writeLockHoldTimer = metrics.timer("write lock hold time")
+
 }
