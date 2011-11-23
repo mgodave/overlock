@@ -16,27 +16,34 @@ class InstrumentedLock extends Lock with Instrumented {
   val readLockHoldTimer = metrics.timer("read lock hold times")
   val writeLockHoldTimer = metrics.timer("write lock hold times")
 
+  val readLockWaitTimer = metrics.timer("read lock wait times")
+  val writeLockWaitTimer = metrics.timer("write lock wait times")
+
   override def readLock[T](f : => T) : T = {
-    lock.readLock.lock
+    readLockWaitTimer.time { lock.readLock.lock }
+    hasReadLock.set(true)
     readLockAcquireMeter.mark
-    val startTime = System.nanoTime
     try {
-      f
+      readLockHoldTimer.time { f }
     } finally {
       lock.readLock.unlock
-      readLockHoldTimer.update(System.nanoTime - startTime, TimeUnit.NANOSECONDS)
+      hasReadLock.set(false)
     }
   }
 
   override def writeLock[T](f : => T) : T = {
-    lock.writeLock.lock
+    if (hasReadLock.get) {
+      lock.readLock.unlock
+    }
+    writeLockWaitTimer.time { lock.writeLock.lock }
     writeLockAcquireMeter.mark
-    val startTime = System.nanoTime
     try {
-      f
+      writeLockHoldTimer.time { f }
     } finally {
+      if (hasReadLock.get) {
+        lock.readLock.lock
+      }
       lock.writeLock.unlock
-      writeLockHoldTimer.update(System.nanoTime - startTime, TimeUnit.NANOSECONDS)
     }
   }
 
