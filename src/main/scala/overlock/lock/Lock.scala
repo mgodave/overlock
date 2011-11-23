@@ -41,6 +41,8 @@ class Lock {
     }
     lock.writeLock.lock
     try {
+      // if lock is upgraded, programmers should make sure to re-check condition as per
+      // http://docs.oracle.com/javase/6/docs/api/java/util/concurrent/locks/ReentrantReadWriteLock.html
       f
     } finally {
       // if we had the read lock before acquiring the write lock, downgrade appropriately
