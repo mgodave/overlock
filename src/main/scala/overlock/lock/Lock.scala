@@ -19,21 +19,34 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 
 class Lock {
   val lock = new ReentrantReadWriteLock
+  val hasReadLock = new ThreadLocal[Boolean]
+
+  hasReadLock.set(false)
   
   def readLock[T](f : => T) : T = {
     lock.readLock.lock
+    hasReadLock.set(true)
     try {
       f
     } finally {
       lock.readLock.unlock
+      hasReadLock.set(false)
     }
   }
   
   def writeLock[T](f : => T) : T = {
+    // if we already have the read lock then we need to upgrade appropriately
+    if (hasReadLock.get) {
+      lock.readLock.unlock
+    }
     lock.writeLock.lock
     try {
       f
     } finally {
+      // if we had the read lock before acquiring the write lock, downgrade appropriately
+      if (hasReadLock.get) {
+        lock.readLock.lock
+      }
       lock.writeLock.unlock
     }
   }
