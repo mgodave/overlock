@@ -2,6 +2,8 @@ package overlock.lock
 
 import java.util.concurrent.AtomicBoolean
 
+//TODO an adaptive spinlock might be a fun exercise: http://blogs.oracle.com/dave/resource/MustangSync.pdf
+//TODO this should really be implemented with LockSupport
 class CPIJSpinLock(spinsBeforeYield = 100, spinsBeforeSleep = 200, sleepTime = 1) {
 
   val busy = new AtomicBoolean(false)
