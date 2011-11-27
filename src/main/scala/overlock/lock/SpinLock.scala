@@ -25,6 +25,7 @@ trait SpinLockable {
   val spinlock = new SpinLock
 }
  
+// I plan on reimplementing this using a the CLH queue -Dave
 class SpinLock {
   val writer = new AtomicBoolean(false)
   val count = new AtomicInteger(0)
