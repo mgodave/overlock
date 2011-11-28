@@ -29,6 +29,8 @@ trait SpinLockable {
 // TODO: I am currently reading ch. 7 of "The Art of Multiprocessor Programming"
 //       and refining this algorithm as I go...
 // TODO: This particular implementation could be served well by an exponential backoff
+//       http://web.mit.edu/6.173/www/currentsemester/readings/R06-scalable-synchronization-1991.pdf
+//       this paper seems to suggest that ttas lock with exp backoff scales extremely well.
 class SpinLock {
   val writer = new AtomicBoolean(false)
   val readerCount = new AtomicInteger(0)
