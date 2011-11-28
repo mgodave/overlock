@@ -68,11 +68,7 @@ class SpinLock {
   def writeLock[A](op : => A) : A = {
 
     // TTAS 
-    var writeLockAcquired = false
-    while (!writeLockAcquired) {
-      while (writer.get || !writer.compareAndSet(false, true)) {}
-      writeLockAcquired = true
-    }
+    while (writer.get || !writer.compareAndSet(false, true)) {}
 
     while(readerCount.get > 0) {}  //wait for all of the readers to clear
 
