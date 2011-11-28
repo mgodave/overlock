@@ -49,8 +49,8 @@ class SpinLock {
         // at this point we don't know whether the increment or the write.set(true)
         // happened first.  If the write.set(true) did happen first then the writer
         // might already be in the critical section and we need to backoff.  Unfortunatly
-        // we cannot determine whether the increment happened first so we must backoff and
-        // try again.
+        // we cannot determine whether the increment happened first (which would stop the 
+        // writer at the busy wait on readerCount) so we must backoff and try again.
         readerCount.decrementAndGet
       } else {
         readLockAcquired = true
