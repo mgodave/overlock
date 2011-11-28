@@ -26,6 +26,9 @@ trait SpinLockable {
 }
  
 // TODO: A true spin lock would probably be better implemented using a queue lock
+// TODO: I am currently reading ch. 7 of "The Art of Multiprocessor Programming"
+//       and refining this algorithm as I go...
+// TODO: This particular implementation could be served well by an exponential backoff
 class SpinLock {
   val writer = new AtomicBoolean(false)
   val readerCount = new AtomicInteger(0)
