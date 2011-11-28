@@ -46,6 +46,11 @@ class SpinLock {
       while (writer.get) // wait for writers to vacate lock
       readerCount.incrementAndGet // express interest in readlock
       if (writer.get) { // if writer got ther first, back down
+        // at this point we don't know whether the increment or the write.set(true)
+        // happened first.  If the write.set(true) did happen first then the writer
+        // might already be in the critical section and we need to backoff.  Unfortunatly
+        // we cannot determine whether the increment happened first so we must backoff and
+        // try again.
         readerCount.decrementAndGet
       } else {
         readLockAcquired = true
