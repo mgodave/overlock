@@ -25,34 +25,49 @@ trait SpinLockable {
   val spinlock = new SpinLock
 }
  
-// I plan on reimplementing this using a the CLH queue -Dave
+// TODO: A true spin lock would probably be better implemented using a queue lock
 class SpinLock {
   val writer = new AtomicBoolean(false)
-  val count = new AtomicInteger(0)
+  val readerCount = new AtomicInteger(0)
   
   /**
    * hold a counter open while performing a thunk
    */
   def readLock[A](op: => A) : A = {
-    waitWriter //wait if a writer has acquired the lock
-    count.incrementAndGet
+
+    // this implementation is not necessarily fair since it gives preference
+    // to write locks and may cause starvation for read locks, however, it 
+    // is at least correct.
+    var readLockAcquired = false
+    while (!readLockAcquired) {
+      while (writer.get) // wait for writers to vacate lock
+      readerCount.incrementAndGet // express interest in readlock
+      if (writer.get) { // if writer got ther first, back down
+        readerCount.decrementAndGet
+      } else {
+        readLockAcquired = true
+      }
+    }
+
     try {
       op
     }
     finally {
-      count.getAndDecrement
+      readerCount.getAndDecrement
     }
   }
-  /**
-   * wait for counters to clear
-   */
-  def waitReaders = while(count.get > 0) {}
-  
-  def waitWriter = while(writer.get) {} 
   
   def writeLock[A](op : => A) : A = {
-    while (!writer.compareAndSet(false,true)) { } //wait until we can exclusively acquire write
-    waitReaders  //wait for all of the readers to clear
+
+    // TTAS 
+    var writeLockAcquired = false
+    while (!writeLockAcquired) {
+      while (writer.get || !writer.compareAndSet(false, true)) {}
+      writeLockAcquired = true
+    }
+
+    while(readerCount.get > 0) {}  //wait for all of the readers to clear
+
     try {
       op
     } finally {

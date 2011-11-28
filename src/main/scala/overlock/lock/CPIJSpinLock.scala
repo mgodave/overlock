@@ -1,10 +1,10 @@
 package overlock.lock
 
-import java.util.concurrent.AtomicBoolean
+import java.util.concurrent.atomic.AtomicBoolean
 
 //TODO an adaptive spinlock might be a fun exercise: http://blogs.oracle.com/dave/resource/MustangSync.pdf
 //TODO this should really be implemented with LockSupport
-class CPIJSpinLock(spinsBeforeYield = 100, spinsBeforeSleep = 200, sleepTime = 1) {
+/*class CPIJSpinLock(spinsBeforeYield = 100, spinsBeforeSleep = 200, sleepTime = 1) {
 
   val busy = new AtomicBoolean(false)
 
@@ -33,4 +33,4 @@ class CPIJSpinLock(spinsBeforeYield = 100, spinsBeforeSleep = 200, sleepTime = 1
     if (busy.compareAndSet(true, false)) { }
   }
 
-}
+}*/
