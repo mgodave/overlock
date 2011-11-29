@@ -32,7 +32,7 @@ trait SpinLockable {
 // TODO: This particular implementation could be served well by an exponential backoff
 //       http://web.mit.edu/6.173/www/currentsemester/readings/R06-scalable-synchronization-1991.pdf
 //       this paper seems to suggest that ttas lock with exp backoff scales extremely well.
-class SpinLock(minDelay:Int = 2, maxDelay:Int = 1024) {
+class SpinLock(minDelay:Int = 2, maxDelay:Int = 10) {
   val writer = new AtomicBoolean(false)
   val readerCount = new AtomicInteger(0)
   val random = new Random
@@ -57,6 +57,8 @@ class SpinLock(minDelay:Int = 2, maxDelay:Int = 1024) {
         // we cannot determine whether the increment happened first (which would stop the 
         // writer at the busy wait on readerCount) so we must backoff and try again.
         readerCount.decrementAndGet
+        
+        // There is contention on the write lock, exponentially backoff
         val delay = random.nextInt(limit)
         limit = Math.min(maxDelay, limit * 2)
         Thread.sleep(delay)
@@ -81,9 +83,12 @@ class SpinLock(minDelay:Int = 2, maxDelay:Int = 1024) {
     while (!writeLockAcquired) {
       while (writer.get) {}
       if (!writer.compareAndSet(false, true)) {
+        // There is contention on the write lock, exponentially backoff
         val delay = random.nextInt(limit)
         limit = Math.min(maxDelay, limit * 2)
         Thread.sleep(delay)
+      } else {
+        writeLockAcquired = true
       }
     }
 
