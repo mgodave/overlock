@@ -15,6 +15,7 @@
 //
 package overlock.lock
 
+import java.util.Random
 import java.util.concurrent.atomic._
 
 /**
@@ -31,10 +32,10 @@ trait SpinLockable {
 // TODO: This particular implementation could be served well by an exponential backoff
 //       http://web.mit.edu/6.173/www/currentsemester/readings/R06-scalable-synchronization-1991.pdf
 //       this paper seems to suggest that ttas lock with exp backoff scales extremely well.
-class SpinLock {
+class SpinLock(minDelay:Int = 2, maxDelay:Int = 1024) {
   val writer = new AtomicBoolean(false)
   val readerCount = new AtomicInteger(0)
-  
+  val random = new Random
   /**
    * hold a counter open while performing a thunk
    */
@@ -43,6 +44,8 @@ class SpinLock {
     // this implementation is not necessarily fair since it gives preference
     // to write locks and may cause starvation for read locks, however, it 
     // is at least correct.
+    
+    val limit = minDelay
     var readLockAcquired = false
     while (!readLockAcquired) {
       while (writer.get) // wait for writers to vacate lock
@@ -54,6 +57,9 @@ class SpinLock {
         // we cannot determine whether the increment happened first (which would stop the 
         // writer at the busy wait on readerCount) so we must backoff and try again.
         readerCount.decrementAndGet
+        val delay = random.nextInt(limit)
+        limit = Math.min(maxDelay, limit * 2)
+        Thread.sleep(delay)
       } else {
         readLockAcquired = true
       }
@@ -63,14 +69,23 @@ class SpinLock {
       op
     }
     finally {
-      readerCount.getAndDecrement
+      readerCount.decrementAndGet
     }
   }
   
   def writeLock[A](op : => A) : A = {
 
     // TTAS 
-    while (writer.get || !writer.compareAndSet(false, true)) {}
+    var writeLockAcquired = false
+    var limit = minDelay
+    while (!writeLockAcquired) {
+      while (writer.get) {}
+      if (!writer.compareAndSet(false, true)) {
+        val delay = random.nextInt(limit)
+        limit = Math.min(maxDelay, limit * 2)
+        Thread.sleep(delay)
+      }
+    }
 
     while(readerCount.get > 0) {}  //wait for all of the readers to clear
 
