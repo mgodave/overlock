@@ -48,7 +48,7 @@ class SpinLock(minDelay:Int = 2, maxDelay:Int = 10) {
     val limit = minDelay
     var readLockAcquired = false
     while (!readLockAcquired) {
-      while (writer.get) // wait for writers to vacate lock
+      while (writer.get) {} // wait for writers to vacate lock
       readerCount.incrementAndGet // express interest in readlock
       if (writer.get) {
         // at this point we don't know whether the increment or the write.set(true)
