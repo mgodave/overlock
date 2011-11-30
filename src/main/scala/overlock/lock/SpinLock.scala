@@ -29,10 +29,12 @@ trait SpinLockable {
 // TODO: A true spin lock would probably be better implemented using a queue lock
 // TODO: I am currently reading ch. 7 of "The Art of Multiprocessor Programming"
 //       and refining this algorithm as I go...
-// TODO: This particular implementation could be served well by an exponential backoff
-//       http://web.mit.edu/6.173/www/currentsemester/readings/R06-scalable-synchronization-1991.pdf
+// TODO: http://web.mit.edu/6.173/www/currentsemester/readings/R06-scalable-synchronization-1991.pdf
 //       this paper seems to suggest that ttas lock with exp backoff scales extremely well.
-class SpinLock(minDelay:Int = 2, maxDelay:Int = 10) {
+// TODO: I am not sure how to determine an efficient range for the delay.  TAMPP suggests this is 
+//       highly dependent on the architecture (which makes sense).  I need to read-up on techniques 
+//       for making this adaptive
+class SpinLock(minDelay:Int = 2, maxDelay:Int = 2048) {
   val writer = new AtomicBoolean(false)
   val readerCount = new AtomicInteger(0)
   val random = new Random
