@@ -15,6 +15,7 @@
 //
 package overlock.lock
 
+import java.lang.Math._
 import java.util.Random
 import java.util.concurrent.atomic._
 
@@ -47,7 +48,7 @@ class SpinLock(minDelay:Int = 2, maxDelay:Int = 2048) {
     // to write locks and may cause starvation for read locks, however, it 
     // is at least correct.
     
-    val limit = minDelay
+    var limit = minDelay
     var readLockAcquired = false
     while (!readLockAcquired) {
       while (writer.get) {} // wait for writers to vacate lock
@@ -62,7 +63,7 @@ class SpinLock(minDelay:Int = 2, maxDelay:Int = 2048) {
         
         // There is contention on the write lock, exponentially backoff
         val delay = random.nextInt(limit)
-        limit = Math.min(maxDelay, limit * 2)
+        limit = min(maxDelay, limit * 2)
         Thread.sleep(delay)
       } else {
         readLockAcquired = true
@@ -87,7 +88,7 @@ class SpinLock(minDelay:Int = 2, maxDelay:Int = 2048) {
       if (!writer.compareAndSet(false, true)) {
         // There is contention on the write lock, exponentially backoff
         val delay = random.nextInt(limit)
-        limit = Math.min(maxDelay, limit * 2)
+        limit = min(maxDelay, limit * 2)
         Thread.sleep(delay)
       } else {
         writeLockAcquired = true
