@@ -61,7 +61,8 @@ class SpinLock(minDelay:Int = 2, maxDelay:Int = 2048) {
         // writer at the busy wait on readerCount) so we must backoff and try again.
         readerCount.decrementAndGet
         
-        // There is contention on the write lock, exponentially backoff
+        // There is contention on the write lock, exponentially backoff.  The purpose of
+        // the backoff is to mitigate contention on the CPU cc-bus.
         val delay = random.nextInt(limit)
         limit = min(maxDelay, limit * 2)
         Thread.sleep(delay)
