@@ -21,28 +21,20 @@ class InstrumentedLock extends Lock with Instrumented {
 
   override def readLock[T](f : => T) : T = {
     readLockWaitTimer.time { lock.readLock.lock }
-    hasReadLock.set(true)
     readLockAcquireMeter.mark
     try {
       readLockHoldTimer.time { f }
     } finally {
       lock.readLock.unlock
-      hasReadLock.set(false)
     }
   }
 
   override def writeLock[T](f : => T) : T = {
-    if (hasReadLock.get) {
-      lock.readLock.unlock
-    }
     writeLockWaitTimer.time { lock.writeLock.lock }
     writeLockAcquireMeter.mark
     try {
       writeLockHoldTimer.time { f }
     } finally {
-      if (hasReadLock.get) {
-        lock.readLock.lock
-      }
       lock.writeLock.unlock
     }
   }
