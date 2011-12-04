@@ -28,6 +28,18 @@ class Lock {
       lock.readLock.unlock
     }
   }
+
+  // perform a lock upgrade and downgrade as shown in ReentrantReadWriteLock javadoc
+  def upgradeToWriteLock[T](f: => T) : T = {
+    lock.readLock.unlock
+    lock.writeLock.lock
+    try {
+      f
+    } finally {
+      lock.readLock.lock
+      lock.writeLock.unlock
+    }
+  }
   
   def writeLock[T](f : => T) : T = {
     lock.writeLock.lock

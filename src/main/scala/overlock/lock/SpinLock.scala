@@ -15,6 +15,8 @@
 //
 package overlock.lock
 
+import java.lang.Math._
+import java.util.Random
 import java.util.concurrent.atomic._
 
 /**
@@ -25,33 +27,77 @@ trait SpinLockable {
   val spinlock = new SpinLock
 }
  
-class SpinLock {
+// TODO: A true spin lock would probably be better implemented using a queue lock
+// TODO: I am currently reading ch. 7 of "The Art of Multiprocessor Programming"
+//       and refining this algorithm as I go...
+// TODO: http://web.mit.edu/6.173/www/currentsemester/readings/R06-scalable-synchronization-1991.pdf
+//       this paper seems to suggest that ttas lock with exp backoff scales extremely well.
+// TODO: I am not sure how to determine an efficient range for the delay.  TAMPP suggests this is 
+//       highly dependent on the architecture (which makes sense).  I need to read-up on techniques 
+//       for making this adaptive
+class SpinLock(minDelay:Int = 2, maxDelay:Int = 2048) {
   val writer = new AtomicBoolean(false)
-  val count = new AtomicInteger(0)
-  
+  val readerCount = new AtomicInteger(0)
+  val random = new Random
   /**
    * hold a counter open while performing a thunk
    */
   def readLock[A](op: => A) : A = {
-    waitWriter //wait if a writer has acquired the lock
-    count.incrementAndGet
+
+    // this implementation is not necessarily fair since it gives preference
+    // to write locks and may cause starvation for read locks, however, it 
+    // is at least correct.
+    
+    var limit = minDelay
+    var readLockAcquired = false
+    while (!readLockAcquired) {
+      while (writer.get) {} // wait for writers to vacate lock
+      readerCount.incrementAndGet // express interest in readlock
+      if (writer.get) {
+        // at this point we don't know whether the increment or the write.set(true)
+        // happened first.  If the write.set(true) did happen first then the writer
+        // might already be in the critical section and we need to backoff.  Unfortunatly
+        // we cannot determine whether the increment happened first (which would stop the 
+        // writer at the busy wait on readerCount) so we must backoff and try again.
+        readerCount.decrementAndGet
+        
+        // There is contention on the write lock, exponentially backoff.  The purpose of
+        // the backoff is to mitigate contention on the CPU cc-bus.
+        val delay = random.nextInt(limit)
+        limit = min(maxDelay, limit * 2)
+        Thread.sleep(delay)
+      } else {
+        readLockAcquired = true
+      }
+    }
+
     try {
       op
     }
     finally {
-      count.getAndDecrement
+      readerCount.decrementAndGet
     }
   }
-  /**
-   * wait for counters to clear
-   */
-  def waitReaders = while(count.get > 0) {}
-  
-  def waitWriter = while(writer.get) {} 
   
   def writeLock[A](op : => A) : A = {
-    while (!writer.compareAndSet(false,true)) { } //wait until we can exclusively acquire write
-    waitReaders  //wait for all of the readers to clear
+
+    // TTAS 
+    var writeLockAcquired = false
+    var limit = minDelay
+    while (!writeLockAcquired) {
+      while (writer.get) {}
+      if (!writer.compareAndSet(false, true)) {
+        // There is contention on the write lock, exponentially backoff
+        val delay = random.nextInt(limit)
+        limit = min(maxDelay, limit * 2)
+        Thread.sleep(delay)
+      } else {
+        writeLockAcquired = true
+      }
+    }
+
+    while(readerCount.get > 0) {}  //wait for all of the readers to clear
+
     try {
       op
     } finally {
